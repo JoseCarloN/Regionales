@@ -1,0 +1,215 @@
+---
+title: "Avance Indicadores Regionales"
+# author: "Jose Carlo Navarrete"
+# date: "5/6/2021"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+
+```{r setup, include = FALSE, echo = TRUE}
+library(highcharter)
+library(dplyr)
+library(flexdashboard)
+library(DT)
+library(shinyjs)
+library(geojsonio)
+library(jsonlite)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo = FALSE}
+# Lectura de Bases de datos para que se mantengan como variables globales #
+indicadores = read.csv("Test.csv", encoding = "UTF-8")
+indicadores = indicadores[, -1]
+colnames(indicadores) = c("Indicador", colnames(indicadores[,-1]))
+
+avance_promedio = indicadores %>%
+  group_by(Indicador) %>%
+  summarise(`Avance promedio` = round(mean(Avance, na.rm = TRUE), 0)) %>%
+  mutate(Desempeño = ifelse(`Avance promedio` < 90, "No satisfactorio", 
+                            ifelse(`Avance promedio` < 100, "Satisfactorio", "Sobresaliente")))
+
+Indicadores_db = read.csv("Indicadores.csv", encoding = "UTF-8")
+colnames(Indicadores_db) = c("Eje Estatal", "Eje Regional", "Política Pública", "Objetivo (cambio)", "Vinculación con las Metas de los ODS", "Nombre del Indicador PED", "Nombre del Indicador Regional", "Definición", "Descripción", "Tipo de algoritmo", "Periodicidad de cálculo", "Fórmula de cálculo", "tendencia", "Dimensión", "Dependencia o Entidad responsable del seguimiento", "LB valor estatal", "LB Unidad de Medida estatal", "LB Fecha estatal", "M 2021 estatal", "FECHA 21 estatal", "M 2024 estatal", "FECHA 24 estatal", "M 2030 estatal", "FECHA 30 estatal", "NO SATIS estatal", "SATIS estatal", "SOBRE estatal", "LB valor Región 1", "M 2021 Región 1", "M 2024 Región 1", "M 2030 Región 1", "LB valor Región 2", "M 2021 Región 2", "M 2024 Región 2", "M 2030 Región 2", "LB valor Región 3", "M 2021 Región 3", "M 2024 Región 3", "M 2030 Región 3", "LB valor Región 4", "M 2021 Región 4", "M 2024 Región 4", "M 2030 Región 4", "LB valor Región 5", "M 2021 Región 5", "M 2024 Región 5", "M 2030 Región 5", "LB valor Región 6", "M 2021 Región 6", "M 2024 Región 6", "M 2030 Región 6", "LB valor Región 7", "M 2021 Región 7", "M 2024 Región 7", "M 2030 Región 7", "Medio de verificación")
+```
+
+Dashboard
+=======================================================================
+
+Row 
+-----------------------------------------------------------------------
+
+### <big><b><font size = 6>Indicadores regionales</font></b></big>
+```{r}
+rendervalue_indicadores = nrow(Indicadores_db)
+renderValueBox({
+  valueBox(value = tags$p(rendervalue_indicadores, style = "font-size: 200%;"),
+           icon = "fas fa-tasks", 
+           color = "#e76f51")
+})
+```
+
+### {.valuebox}
+
+```{r}
+rendervalue_sobresaliente = nrow(avance_promedio %>%
+  filter(Desempeño == "Sobresaliente"))
+renderValueBox({
+  valueBox(value = tags$p(rendervalue_sobresaliente, style = "font-size: 200%;"),
+           caption = "<big><b><font size = 6>Desempeño sobresaliente</font></b></big><br><font size = 1>*Promedio regional</font>",
+                           # actionButton("button1", " ", style = "background-color:rgba(39, 128, 227, 0.0); border-color:rgba(39, 128, 227, 0.0); position: absolute; overflow: hidden; left: 0px; top: 0px; right: 0px; bottom: 0px; width:100%")),
+           icon = "fas fa-check-double",
+           color = "#023e8a")
+})
+```
+
+### {.valuebox}
+
+```{r}
+rendervalue_satisfactorio = nrow(avance_promedio %>%
+  filter(Desempeño == "Satisfactorio"))
+renderValueBox({
+  valueBox(value = tags$p(rendervalue_satisfactorio, style = "font-size: 200%;"),
+           caption = "<big><b><font size = 6>Desempeño satisfactorio</font></b></big><br><font size = 1>*Promedio regional</font>",
+                           # actionButton("button2", " ", style = "background-color:rgba(39, 128, 227, 0.0); border-color:rgba(39, 128, 227, 0.0); position: absolute; overflow: hidden; left: 0px; top: 0px; right: 0px; bottom: 0px; width:100%")),
+           icon = "fas fa-check",
+           color = "#0077b6")
+})
+```
+
+### {.valuebox}
+
+```{r}
+rendervalue_no_satisfactorio = nrow(avance_promedio %>%
+  filter(Desempeño == "No satisfactorio"))
+renderValueBox({
+  valueBox(value = tags$p(rendervalue_no_satisfactorio, style = "font-size: 200%;"),
+           caption = "<big><b><font size = 6>Desempeño no satisfactorio</font></b></big><br><font size = 1>*Promedio regional</font>",
+                           # actionButton(inputId = "button3", " ", style = "background-color:rgba(39, 128, 227, 0.0); border-color:rgba(39, 128, 227, 0.0); position: absolute; overflow: hidden; left: 0px; top: 0px; right: 0px; bottom: 0px; width:100%")),
+           icon = "fas fa-exclamation",
+           color = "#0096c7")
+})
+```
+
+Row {data-height=1000}
+-----------------------------------------------------------------------
+
+### Mapa regional de Yucatán
+``` {r echo = FALSE}
+yucatanjson = as.json("MapLayer.geojson")
+
+data <- tibble(
+  region = 
+    c("I", "II", "III", "IV", "V", "VI", "VII"),  
+  avance = c(round(runif(7) * 100, 0))
+)
+data <- data %>% 
+  mutate(value = cumsum(!duplicated(region)))
+set.seed(2000)
+
+dta_clss = data %>%
+  mutate(name = region,
+         from = value,
+         to = from + 1,
+         color = c("#f94144", "#f3722c", "#f8961e", "#f9c74f",
+         "#90be6d", "#43aa8b", "#277da1")) %>%
+  list_parse()
+
+renderHighchart({
+  ausmap <- highchart(type = "map") %>%
+    hc_add_series(mapData = yucatanjson,
+                  data = data,
+                  joinBy = c("REGION_1", "region"),
+                  name = "Avance",
+                  value = "avance",
+                  showInLegend = FALSE,
+                  borderWidth = 0,
+                  tooltip = list(pointFormat = "Avance general {point.avance}%"),
+                  dataLabels = list(enabled = TRUE, format = "{point.region}")) %>%
+     hc_colorAxis(dataClassColor = "category",
+                  dataClasses = dta_clss,
+                  showInLegend = FALSE
+    ) %>%
+    hc_exporting(enabled = TRUE) %>%
+    hc_add_theme(
+      hc_theme(
+        chart = list(
+          backgroundColor = "#FFFFFF"
+        )
+      )
+    )
+})
+```
+
+### Avance por Region
+
+``` {r echo = FALSE}
+dclass = list_parse(data.frame(from = c(0, 90, 100),
+                      name = c("No satisfactorio", "Satisfactorio", "Sobresaliente"),
+                      color = c("#0096c7", "#0077b6", "#023e8a")))
+
+renderHighchart({
+  hchart(indicadores, type = "heatmap", 
+         hcaes(x = Region, y = Indicador, value = Avance), 
+         name = "Avance") %>%
+    hc_colorAxis(dataClasses = dclass,
+                 startOnTick = FALSE, 
+                 endOnTick = FALSE) %>%
+    hc_legend(align = "center",
+              enabled = TRUE) %>%
+    hc_tooltip(animation = TRUE,
+               followPointer = TRUE,
+               pointFormat = "<b>{point.value:,.0f}%</b>",
+               shared = TRUE) %>%
+    hc_exporting(enabled = TRUE) %>%
+    hc_add_theme(
+      hc_theme(
+        chart = list(
+          backgroundColor = "#FFFFFF"
+        )
+      )
+    )
+})
+```
+
+Indicadores
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Base
+```{r echo = FALSE}
+Indicadores_db = Indicadores_db %>%
+  select(`Eje Regional`, `Política Pública`, `Vinculación con las Metas de los ODS`, `Nombre del Indicador Regional`,
+         `LB valor Región 1`, `M 2021 Región 1`,
+         `LB valor Región 2`, `M 2021 Región 2`,
+         `LB valor Región 3`, `M 2021 Región 3`,
+         `LB valor Región 4`, `M 2021 Región 4`,
+         `LB valor Región 5`, `M 2021 Región 5`,
+         `LB valor Región 6`, `M 2021 Región 6`,
+         `LB valor Región 7`, `M 2021 Región 7`,
+         `Medio de verificación`) %>%
+  arrange(`Eje Regional`)
+
+DT::renderDataTable({Indicadores_db},
+  extensions = c("Scroller", "Buttons"), 
+  options = list(scroller = TRUE,
+                 scrollX = TRUE,
+                 scrollY = 700,
+                 autoWidth = TRUE,
+                 pageLength = 48,
+                 dom = "Bfrtip",
+                 buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                 initComplete = JS(
+                   "function(settings, json) {","$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+                   "}"),
+                 columnDefs = list(list(width = '75px', targets = 5:18))
+    ))
+```

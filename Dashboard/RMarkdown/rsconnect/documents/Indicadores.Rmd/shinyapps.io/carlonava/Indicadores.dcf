@@ -1,0 +1,13 @@
+name: Indicadores
+title: Indicadores
+username:
+account: carlonava
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4091843
+bundleId: 4591502
+url: https://carlonava.shinyapps.io/Indicadores/
+when: 1620849771.01935
+lastSyncTime: 1620849771.02034
+asMultiple: FALSE
+asStatic: FALSE
