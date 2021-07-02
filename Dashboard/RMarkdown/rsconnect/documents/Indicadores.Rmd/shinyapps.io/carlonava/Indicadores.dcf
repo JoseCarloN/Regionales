@@ -5,9 +5,9 @@ account: carlonava
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4091843
-bundleId: 4591502
+bundleId: 4775084
 url: https://carlonava.shinyapps.io/Indicadores/
-when: 1620849771.01935
-lastSyncTime: 1620849771.02034
+when: 1625098798.65268
+lastSyncTime: 1625098798.65268
 asMultiple: FALSE
 asStatic: FALSE

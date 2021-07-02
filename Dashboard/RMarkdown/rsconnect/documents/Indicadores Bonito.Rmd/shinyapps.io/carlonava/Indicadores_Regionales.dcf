@@ -1,0 +1,13 @@
+name: Indicadores_Regionales
+title: Indicadores_Regionales
+username:
+account: carlonava
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4335001
+bundleId: 4775338
+url: https://carlonava.shinyapps.io/Indicadores_Regionales/
+when: 1625106090.96868
+lastSyncTime: 1625106090.96868
+asMultiple: FALSE
+asStatic: FALSE

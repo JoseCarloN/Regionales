@@ -1,17 +1,22 @@
 ---
-title: "Avance Indicadores Regionales"
+title: "Indicadores Regionales"
 # author: "Jose Carlo Navarrete"
 # date: "5/6/2021"
 output:
   flexdashboard::flex_dashboard:
-    orientation: rows
+    theme:
+      version: 4
+      # bootswatch: minty
+      base_font: 
+        google: Barlow
     vertical_layout: scroll
-    social: menu
-    source_code: embed
+    
+    # social: menu
+    # source_code: embed
 runtime: shiny
 ---
 
-```{r setup, include = FALSE, echo = TRUE}
+```{r setup, include = FALSE, echo = FALSE}
 library(highcharter)
 library(dplyr)
 library(flexdashboard)
@@ -19,197 +24,736 @@ library(DT)
 library(shinyjs)
 library(geojsonio)
 library(jsonlite)
+library(purrr)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r echo = FALSE}
 # Lectura de Bases de datos para que se mantengan como variables globales #
-indicadores = read.csv("Test.csv", encoding = "UTF-8")
-indicadores = indicadores[, -1]
+useShinyjs(rmd = TRUE)
+indicadores = read.csv("Indicadores.csv", encoding = "UTF-8")
 colnames(indicadores) = c("Indicador", colnames(indicadores[,-1]))
 
 avance_promedio = indicadores %>%
   group_by(Indicador) %>%
-  summarise(`Avance promedio` = round(mean(Avance, na.rm = TRUE), 0)) %>%
-  mutate(Desempeño = ifelse(`Avance promedio` < 90, "No satisfactorio", 
-                            ifelse(`Avance promedio` < 100, "Satisfactorio", "Sobresaliente")))
+  summarise(
+    `Avance promedio` = round(mean(Avance, na.rm = TRUE), 0)
+    ) %>%
+  mutate(
+    Desempeño = ifelse(`Avance promedio` < 90, "No satisfactorio", 
+                            ifelse(`Avance promedio` < 100, "Satisfactorio", 
+                                   "Sobresaliente"))
+    )
 
-Indicadores_db = read.csv("Indicadores.csv", encoding = "UTF-8")
+Indicadores_db = read.csv("Indicadores Meta.csv", 
+                          encoding = "UTF-8")
 colnames(Indicadores_db) = c("Eje Estatal", "Eje Regional", "Política Pública", "Objetivo (cambio)", "Vinculación con las Metas de los ODS", "Nombre del Indicador PED", "Nombre del Indicador Regional", "Definición", "Descripción", "Tipo de algoritmo", "Periodicidad de cálculo", "Fórmula de cálculo", "tendencia", "Dimensión", "Dependencia o Entidad responsable del seguimiento", "LB valor estatal", "LB Unidad de Medida estatal", "LB Fecha estatal", "M 2021 estatal", "FECHA 21 estatal", "M 2024 estatal", "FECHA 24 estatal", "M 2030 estatal", "FECHA 30 estatal", "NO SATIS estatal", "SATIS estatal", "SOBRE estatal", "LB valor Región 1", "M 2021 Región 1", "M 2024 Región 1", "M 2030 Región 1", "LB valor Región 2", "M 2021 Región 2", "M 2024 Región 2", "M 2030 Región 2", "LB valor Región 3", "M 2021 Región 3", "M 2024 Región 3", "M 2030 Región 3", "LB valor Región 4", "M 2021 Región 4", "M 2024 Región 4", "M 2030 Región 4", "LB valor Región 5", "M 2021 Región 5", "M 2024 Región 5", "M 2030 Región 5", "LB valor Región 6", "M 2021 Región 6", "M 2024 Región 6", "M 2030 Región 6", "LB valor Región 7", "M 2021 Región 7", "M 2024 Región 7", "M 2030 Región 7", "Medio de verificación")
 ```
 
-Dashboard
-=======================================================================
+```{css, echo = FALSE}
+# CSS del html #
+.value-box {
+  max-height: 175px;
+}
 
-Row 
------------------------------------------------------------------------
+div.dt-buttons {
+    float: none;
+    width: auto;
+    text-align: start;
+    margin-bottom: 0.5em;
+}
 
-### <big><b><font size = 6>Indicadores regionales</font></b></big>
+em { 
+  margin-left: 10px;
+}
+
+.Titulo {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+label {
+  float: left;
+  overflow: hidden;
+  margin-left: 10px;
+}
+
+.value-box {
+    border-radius: 10px;
+    position: relative;
+    display: block;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    box-shadow: 0 0 1px rgb(0 0 0 / 13%), 0 1px 3px rgb(0 0 0 / 20%);
+}
+
+.chart-wrapper, .nav-tabs-custom, .sbframe-commentary {
+    background: #fff;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    margin-right: 8px;
+}
+```
+
+# Dashboard
+
+Column {data-width=350}
+--------------------------------------------------------------------------------
+
+### Indicadores totale {.no-title .valuebox}
+
 ```{r}
 rendervalue_indicadores = nrow(Indicadores_db)
 renderValueBox({
-  valueBox(value = tags$p(rendervalue_indicadores, style = "font-size: 200%;"),
-           icon = "fas fa-tasks", 
-           color = "#e76f51")
+  valueBox(
+    value = tags$p(rendervalue_indicadores, style = "font-size: 150%; color:white; font-family:Barlow Black;"),
+    caption = "<font size='5' color='white' face='Barlow Black'>Indicadores regionales</font>", 
+    icon = "fas fa-tasks", 
+    color = "#e76f51"
+    )
 })
 ```
 
-### {.valuebox}
+### Indicadores sobresalientes {.no-title .valuebox}
 
 ```{r}
-rendervalue_sobresaliente = nrow(avance_promedio %>%
-  filter(Desempeño == "Sobresaliente"))
+rendervalue_sobresaliente = nrow(avance_promedio %>% filter(Desempeño == "Sobresaliente"))
 renderValueBox({
-  valueBox(value = tags$p(rendervalue_sobresaliente, style = "font-size: 200%;"),
-           caption = "<big><b><font size = 6>Desempeño sobresaliente</font></b></big><br><font size = 1>*Promedio regional</font>",
-                           # actionButton("button1", " ", style = "background-color:rgba(39, 128, 227, 0.0); border-color:rgba(39, 128, 227, 0.0); position: absolute; overflow: hidden; left: 0px; top: 0px; right: 0px; bottom: 0px; width:100%")),
-           icon = "fas fa-check-double",
-           color = "#023e8a")
+  valueBox(
+    value = tags$p(rendervalue_sobresaliente, 
+                   style = "font-size: 150%; color:white; font-family:Barlow Black;"),
+    caption = "<font size='5' color='white' face='Barlow Black'>Desempeño sobresaliente</font><br><font size='1' color='white' face='Barlow'>*Promedio regional</font>",
+    icon = "fas fa-check-double",
+    color = "#023e8a"
+    )
 })
 ```
 
-### {.valuebox}
+### Indicadores satisfactorios {.no-title .valuebox}
 
 ```{r}
-rendervalue_satisfactorio = nrow(avance_promedio %>%
-  filter(Desempeño == "Satisfactorio"))
+rendervalue_satisfactorio = nrow(avance_promedio %>% filter(Desempeño == "Satisfactorio"))
 renderValueBox({
-  valueBox(value = tags$p(rendervalue_satisfactorio, style = "font-size: 200%;"),
-           caption = "<big><b><font size = 6>Desempeño satisfactorio</font></b></big><br><font size = 1>*Promedio regional</font>",
-                           # actionButton("button2", " ", style = "background-color:rgba(39, 128, 227, 0.0); border-color:rgba(39, 128, 227, 0.0); position: absolute; overflow: hidden; left: 0px; top: 0px; right: 0px; bottom: 0px; width:100%")),
-           icon = "fas fa-check",
-           color = "#0077b6")
+  valueBox(
+    value = tags$p(rendervalue_satisfactorio, 
+                   style = "font-size: 150%; color:white; font-family:Barlow Black;"),
+    caption = "<font size='5' color='white' face='Barlow Black'>Desempeño satisfactorio</font><br><font size='1' color='white' face='Barlow'>*Promedio regional</font>",
+    icon = "fas fa-check",
+    color = "#0077b6"
+    )
 })
 ```
 
-### {.valuebox}
+### Indicadores no satisfactorios {.no-title .valuebox}
 
 ```{r}
-rendervalue_no_satisfactorio = nrow(avance_promedio %>%
-  filter(Desempeño == "No satisfactorio"))
+rendervalue_no_satisfactorio = nrow(avance_promedio %>% filter(Desempeño == "No satisfactorio"))
 renderValueBox({
-  valueBox(value = tags$p(rendervalue_no_satisfactorio, style = "font-size: 200%;"),
-           caption = "<big><b><font size = 6>Desempeño no satisfactorio</font></b></big><br><font size = 1>*Promedio regional</font>",
-                           # actionButton(inputId = "button3", " ", style = "background-color:rgba(39, 128, 227, 0.0); border-color:rgba(39, 128, 227, 0.0); position: absolute; overflow: hidden; left: 0px; top: 0px; right: 0px; bottom: 0px; width:100%")),
-           icon = "fas fa-exclamation",
-           color = "#0096c7")
+  valueBox(
+    value = tags$p(rendervalue_no_satisfactorio, 
+                   style = "font-size: 150%; color:white; font-family:Barlow Black;"),
+    caption = "<font size='5' color='white' face='Barlow Black'>Desempeño no satisfactorio</font><br><font size='1' color='white' face='Barlow'>*Promedio regional</font>",
+    icon = "fas fa-exclamation",
+    color = "#0096c7"
+    )
 })
 ```
 
-Row {data-height=1000}
------------------------------------------------------------------------
+### Mapa regional {.no-title}
 
-### Mapa regional de Yucatán
-``` {r echo = FALSE}
+```{r echo = FALSE}
+# geoJSON para la capa del estado dividido por regiones #
 yucatanjson = as.json("MapLayer.geojson")
 
-data <- tibble(
-  region = 
-    c("I", "II", "III", "IV", "V", "VI", "VII"),  
-  avance = c(round(runif(7) * 100, 0))
-)
-data <- data %>% 
-  mutate(value = cumsum(!duplicated(region)))
-set.seed(2000)
+data = indicadores %>%
+  group_by(Region) %>%
+  # Calculo del avance promedio de los indicadores de cada region #
+  summarise(avance = round(mean(Avance, na.rm = TRUE))) %>%
+  ungroup() %>%
+  # Asignando un numero romano por numero de region para el mapa #
+  mutate(
+    region = case_when(
+      Region == "Región 1" ~ "I",
+      Region == "Región 2" ~ "II",
+      Region == "Región 3" ~ "III",
+      Region == "Región 4" ~ "IV",
+      Region == "Región 5" ~ "V",
+      Region == "Región 6" ~ "VI",
+      Region == "Región 7" ~ "VII" 
+    ),
+    drilldown = Region,
+  )
 
+data = data %>% 
+  mutate(
+    value = cumsum(!duplicated(region))
+    )
+
+# Para hacer los graficos que se mostraran como drilldown al hacer click en alguna region en especifico #
+drill = indicadores %>%
+  tidyr::replace_na(list(Avance = 0)) %>%
+  group_by(Region) %>%
+  slice_max(Avance, n = 5, with_ties = FALSE) %>%
+  ungroup() %>%
+  group_nest(Region) %>%
+  mutate(
+    id = Region,
+    type = "column",
+    showInLegend = FALSE,
+    tooltip = list(list(
+      followPointer = TRUE,
+      headerFormat = "<span style='color:{point.color}'>\u25CF </span> <b>{point.key}</b><br>",
+      pointFormat = "Avance: {point.y}%",
+      useHTML = TRUE
+    )),
+    label = list(
+      enabled = TRUE
+    ),
+    data = map(data, mutate, name = Indicador, y = Avance),
+    data = map(data, select, name, y),
+    data = map(data, list_parse)
+  )
+
+# Armando los data clases para el mapa #
+# Esto se encarga de asignar los colores a cada una de las 7 regiones #
 dta_clss = data %>%
-  mutate(name = region,
-         from = value,
-         to = from + 1,
-         color = c("#f94144", "#f3722c", "#f8961e", "#f9c74f",
-         "#90be6d", "#43aa8b", "#277da1")) %>%
+  mutate(
+    name = region,
+    from = value,
+    to = from + 1,
+    color = c("#f94144", "#f3722c", "#f8961e", "#f9c74f",
+              "#90be6d", "#43aa8b", "#277da1")
+    ) %>%
   list_parse()
 
 renderHighchart({
-  ausmap <- highchart(type = "map") %>%
-    hc_add_series(mapData = yucatanjson,
-                  data = data,
-                  joinBy = c("REGION_1", "region"),
-                  name = "Avance",
-                  value = "avance",
-                  showInLegend = FALSE,
-                  borderWidth = 0,
-                  tooltip = list(pointFormat = "Avance general {point.avance}%"),
-                  dataLabels = list(enabled = TRUE, format = "{point.region}")) %>%
-     hc_colorAxis(dataClassColor = "category",
-                  dataClasses = dta_clss,
-                  showInLegend = FALSE
+  highchart(
+    type = "map"
     ) %>%
-    hc_exporting(enabled = TRUE) %>%
+    hc_chart(
+      events = list(
+        drilldown = JS(
+            "function(e) {
+                var region =  e.point.Region
+                var easeOutBounce = function (pos) {
+                  if ((pos) < (1 / 2.75)) {
+                      return (7.5625 * pos * pos);
+                  }
+                  if (pos < (2 / 2.75)) {
+                      return (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75);
+                  }
+                  if (pos < (2.5 / 2.75)) {
+                      return (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375);
+                  }
+                  return (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375);
+                };
+              
+                Math.easeOutBounce = easeOutBounce;
+                
+                this.update({
+                  
+                  title: {
+                    useHTML: true,
+                    text: '<h2 class=\"Titulo\">Top 5 indicadores ' + region.toLowerCase() + '</h2>'
+                  },
+            
+                  xAxis: [{
+                    visible: true,
+                    type: 'category',
+                    labels: {
+                      formatter: function() {
+                        return this.value;
+                      }
+                    },
+                    align: 'center'
+                  }],
+                  
+                  yAxis: [{
+                    visible: true,
+                    reversed: false,
+                    labels: {
+                      format: '{value:.0f}%'
+                    }
+                  }],
+                  
+                  plotOptions: {
+                    column: {
+                      animation: {
+                        easing: 'easeOutBounce',
+                        duration: 1500
+                      },
+                      borderRadius: 10
+                    }
+                  }
+                });
+            }"
+      ),
+      drillup = JS(
+        "function() {
+          var chart = this;
+  
+          chart.update({
+            chart: {
+              type: 'map',
+              panning: false
+            },
+            title: {
+                    text: '<h2 class=\"Titulo\">Avance general por región</h2>'
+                  },
+            xAxis: [{
+              visible: false
+            }],
+            yAxis: [{
+              visible: false,
+              reversed: true
+            }]
+          });
+        }"
+      ),
+        beforePrint = JS(
+          "function() {
+            //Para que antes de exportar el PDF se esconda el context menu
+            this.exportSVGElements[0].hide();
+          
+            //Para ocultar el boton de drillup
+            this.drillUpButton.hide();
+            
+            //Para que antes de hacer el resizing se guarden las dimensiones actuales del chart
+            this.oldhasUserSize = this.hasUserSize;
+            this.resetParams = [this.chartWidth, this.chartHeight, false];
+            
+            //Cambiando el color del background para la impresion
+            this.update({ 
+              chart: { 
+                backgroundColor: 'transparent'
+              } 
+            });
+          
+            //Resizing
+            this.setSize(600, 400, false);
+          }"
+          ),
+        afterPrint = JS(
+          "function() {
+            //Para que despues de exportar a PDF se muestre el context menu
+            this.exportSVGElements[0].show();
+
+            //Para volver a mostrar el boton de drillup
+            this.drillUpButton.show();
+          
+            //Para que luego de exportar el PDF se regrese el chart a sus medidas originales
+            this.setSize.apply(this, this.resetParams);
+            this.hasUserSize = this.oldhasUserSize;
+          
+            //Regresando al color original
+            this.update({ 
+              chart: { 
+                backgroundColor: '#FFFFFF'
+              } 
+            })
+          }"
+          )
+        )
+      ) %>%
+    hc_title(
+      align = "left",
+      style = list(
+        "font-family" = "Barlow Black"
+      ),
+      text = "<h2 class='Titulo'>Avance general por región</h2>",
+      useHTML = TRUE
+    ) %>%
+    hc_caption(
+      text = "
+      <em>El cálculo del avance promedio omite aquellos indicadores cuya información no está disponible.</em>
+      ",
+      useHTML = TRUE
+    ) %>%
+    hc_add_series(
+      mapData = yucatanjson,
+      data = data,
+      joinBy = c("REGION_1", "region"),
+      name = "Avance",
+      value = "avance",
+      showInLegend = FALSE,
+      borderWidth = 0,
+      tooltip = list(
+        animation = TRUE,
+        followPointer = TRUE,
+        headerFormat = "<b><span style='color:{point.color}'>\u25CF {point.Region}</span></b>",
+        pointFormat = "
+        <b>{point.Region}</b><br>
+          Avance general: {point.avance:,.0f}%",
+        shared = FALSE,
+        hideDelay = 250,
+        useHTML = TRUE
+        ),
+      dataLabels = list(
+        enabled = TRUE, 
+        format = "{point.region}"
+        )
+      ) %>%
+     hc_colorAxis(
+       dataClassColor = "category",
+       dataClasses = dta_clss,
+       showInLegend = FALSE
+       ) %>%
+    hc_drilldown(
+      allowPointDrilldown = TRUE,
+      series = list_parse(drill),
+      drillUpButton = list(
+        relativeTo = "plotBox"
+      )
+    ) %>%
+    hc_exporting(
+      enabled = TRUE,
+      allowHTML = TRUE
+      ) %>%
     hc_add_theme(
       hc_theme(
         chart = list(
-          backgroundColor = "#FFFFFF"
+          backgroundColor = "#FFFFFF",
+          style = list(
+            fontFamily = "Barlow"
+          )
         )
       )
     )
 })
 ```
 
-### Avance por Region
+Column
+--------------------------------------------------------------------------------
 
-``` {r echo = FALSE}
-dclass = list_parse(data.frame(from = c(0, 90, 100),
-                      name = c("No satisfactorio", "Satisfactorio", "Sobresaliente"),
-                      color = c("#0096c7", "#0077b6", "#023e8a")))
+### Avance por indicador {.no-title .no-mobile}
+
+```{r echo = FALSE}
+dclass = list_parse(
+  data.frame(from = c(0, 90, 100),
+  name = c(HTML("No satisfactorio<sup>1</sup>"), HTML("Satisfactorio<sup>2</sup>"), HTML("Sobresaliente<sup>3</sup>")),
+  color = c("#0096c7", "#0077b6", "#023e8a")
+  )
+)
 
 renderHighchart({
-  hchart(indicadores, type = "heatmap", 
-         hcaes(x = Region, y = Indicador, value = Avance), 
-         name = "Avance") %>%
-    hc_colorAxis(dataClasses = dclass,
-                 startOnTick = FALSE, 
-                 endOnTick = FALSE) %>%
-    hc_legend(align = "center",
-              enabled = TRUE) %>%
-    hc_tooltip(animation = TRUE,
-               followPointer = TRUE,
-               pointFormat = "<b>{point.value:,.0f}%</b>",
-               shared = TRUE) %>%
-    hc_exporting(enabled = TRUE) %>%
+  hchart(
+    indicadores,
+    type = "heatmap", 
+    hcaes(
+      x = Region, 
+      y = Indicador, 
+      value = Avance
+      ), 
+    name = "Avance"
+    ) %>%
+    hc_chart(
+      events = list(
+        beforePrint = JS(
+          "function() {
+            //Para que antes de exportar el PDF se esconda el context menu
+            this.exportSVGElements[0].hide();
+            
+            //Para que antes de hacer el resizing se guarden las dimensiones actuales del chart
+            this.oldhasUserSize = this.hasUserSize;
+            this.resetParams = [this.chartWidth, this.chartHeight, false];
+            
+            //Cambiando el color del background para la impresion
+            this.update({ 
+              chart: { 
+                backgroundColor: 'transparent'
+              }
+            });
+          
+            //Resizing
+            this.setSize(1200, 1200, false);
+          }"
+          ),
+        afterPrint = JS(
+          "function() {
+            //Para que despues de exportar a PDF se muestre el context menu
+            this.exportSVGElements[0].show();
+            
+            //Para que luego de exportar el PDF se regrese el chart a sus medidas originales
+            this.setSize.apply(this, this.resetParams);
+            this.hasUserSize = this.oldhasUserSize;
+            
+            //Regresando al color original
+              this.update({ 
+                chart: { 
+                  backgroundColor: '#FFFFFF'
+                } 
+            })
+          
+          }"
+          )
+      )
+    ) %>%
+    hc_title(
+      align = "left",
+      style = list(
+        "font-family" = "Barlow Black"
+      ),
+      text = "<h2 class='Titulo'>Avance de indicadores por región</h2>",
+      useHTML = TRUE
+    ) %>%
+    hc_subtitle(
+      align = "left"
+      
+    ) %>%
+    hc_colorAxis(
+      dataClasses = dclass,
+      startOnTick = FALSE, 
+      endOnTick = FALSE
+      ) %>%
+    hc_yAxis(
+      type = "category",
+      reversed = TRUE,
+      title = list(
+        text = NA
+      )
+    ) %>%
+    hc_xAxis(
+      type = "category",
+      title = list(
+        text = NA
+      )
+    ) %>%
+    hc_legend(
+      align = "center",
+      enabled = TRUE,
+      useHTML = TRUE
+      ) %>%
+    hc_tooltip(
+      animation = TRUE,
+      followPointer = TRUE,
+      headerFormat = "<b><span style='color:{point.color}'>\u25CF {point.Region}</span></b>",
+      pointFormat = "
+      <b>{point.Region}</b><br>
+        <i>{point.Indicador}</i><br>
+          {point.value:,.0f}%
+      ",
+      nullFormatter = JS(
+        "function () {
+          return '<b>' + this.Region + '</b><br><i>' + this.Indicador + '</i><br>No disponible';
+        }"
+        ),
+      shared = FALSE,
+      hideDelay = 250
+      ) %>%
+    hc_exporting(
+      enabled = TRUE,
+      allowHTML = TRUE
+      ) %>%
+    hc_caption(
+      text = "
+      <b>Clasificación del avance por indicador.</b><br>
+      
+      <em><sup>1</sup> Todo indicador cuya avance sea menor al 90% de su meta.</em><br>
+      <em><sup>2</sup> Todo indicador cuya avance sea entre 90% y 100% de su meta.</em><br>
+      <em><sup>3</sup> Todo indicador cuya avance sea mayor al 100% de su meta.</em><br>
+      ",
+      useHTML = TRUE
+    ) %>%
     hc_add_theme(
       hc_theme(
         chart = list(
-          backgroundColor = "#FFFFFF"
+          backgroundColor = "#FFFFFF",
+          style = list(
+            fontFamily = "Barlow"
+          )
         )
       )
     )
 })
 ```
 
-Indicadores
-=======================================================================
+### Avance por indicador {.no-title .mobile data-height=1000px}
 
-Row
------------------------------------------------------------------------
+```{r echo = FALSE}
+dclass = list_parse(
+  data.frame(from = c(0, 90, 100),
+  name = c(HTML("No satisfactorio<sup>1</sup>"), HTML("Satisfactorio<sup>2</sup>"), HTML("Sobresaliente<sup>3</sup>")),
+  color = c("#0096c7", "#0077b6", "#023e8a")
+  )
+)
 
-### Base
+renderHighchart({
+  hchart(
+    indicadores,
+    type = "heatmap",
+    hcaes(
+      x = Region,
+      y = Indicador,
+      value = Avance
+      ),
+    name = "Avance"
+    ) %>%
+    hc_chart(
+      events = list(
+        beforePrint = JS(
+          "function() {
+            //Para que antes de exportar el PDF se esconda el context menu
+            this.exportSVGElements[0].hide();
+
+            //Para que antes de hacer el resizing se guarden las dimensiones actuales del chart
+            this.oldhasUserSize = this.hasUserSize;
+            this.resetParams = [this.chartWidth, this.chartHeight, false];
+
+            //Cambiando el color del background para la impresion
+            this.update({
+              chart: {
+                backgroundColor: 'transparent'
+              }
+            });
+
+            //Resizing
+            this.setSize(1200, 1200, false);
+          }"
+          ),
+        afterPrint = JS(
+          "function() {
+            //Para que despues de exportar a PDF se muestre el context menu
+            this.exportSVGElements[0].show();
+
+            //Para que luego de exportar el PDF se regrese el chart a sus medidas originales
+            this.setSize.apply(this, this.resetParams);
+            this.hasUserSize = this.oldhasUserSize;
+
+            //Regresando al color original
+              this.update({
+                chart: {
+                  backgroundColor: '#FFFFFF'
+                }
+            })
+
+          }"
+          )
+      )
+    ) %>%
+    hc_title(
+      align = "left",
+      style = list(
+        "font-family" = "Barlow Black"
+      ),
+      text = "<h2 class='Titulo'>Avance de indicadores por región</h2>",
+      useHTML = TRUE
+    ) %>%
+    hc_subtitle(
+      align = "left"
+
+    ) %>%
+    hc_colorAxis(
+      dataClasses = dclass,
+      startOnTick = FALSE,
+      endOnTick = FALSE
+      ) %>%
+    hc_yAxis(
+      type = "category",
+      reversed = TRUE,
+      title = list(
+        text = NA
+      )
+    ) %>%
+    hc_xAxis(
+      type = "category",
+      title = list(
+        text = NA
+      )
+    ) %>%
+    hc_legend(
+      align = "center",
+      enabled = TRUE,
+      useHTML = TRUE
+      ) %>%
+    hc_tooltip(
+      animation = TRUE,
+      followPointer = TRUE,
+      headerFormat = "<b><span style='color:{point.color}'>\u25CF {point.Region}</span></b>",
+      pointFormat = "
+      <b>{point.Region}</b><br>
+        <i>{point.Indicador}</i><br>
+          {point.value:,.0f}%
+      ",
+      nullFormatter = JS(
+        "function () {
+          return '<b>' + this.Region + '</b><br><i>' + this.Indicador + '</i><br>No disponible';
+        }"
+        ),
+      shared = FALSE,
+      hideDelay = 250
+      ) %>%
+    hc_exporting(
+      enabled = TRUE,
+      allowHTML = TRUE
+      ) %>%
+    hc_caption(
+      text = "
+      <b>Clasificación del avance por indicador.</b><br>
+
+      <em><sup>1</sup> Todo indicador cuya avance sea menor al 90% de su meta.</em><br>
+      <em><sup>2</sup> Todo indicador cuya avance sea entre 90% y 100% de su meta.</em><br>
+      <em><sup>3</sup> Todo indicador cuya avance sea mayor al 100% de su meta.</em><br>
+      ",
+      useHTML = TRUE
+    ) %>%
+    hc_add_theme(
+      hc_theme(
+        chart = list(
+          backgroundColor = "#FFFFFF",
+          style = list(
+            fontFamily = "Barlow"
+          )
+        )
+      )
+    )
+})
+```
+
+# Indicadores
+
+### Base de indicadores {.no-title}
+
 ```{r echo = FALSE}
 Indicadores_db = Indicadores_db %>%
-  select(`Eje Regional`, `Política Pública`, `Vinculación con las Metas de los ODS`, `Nombre del Indicador Regional`,
-         `LB valor Región 1`, `M 2021 Región 1`,
-         `LB valor Región 2`, `M 2021 Región 2`,
-         `LB valor Región 3`, `M 2021 Región 3`,
-         `LB valor Región 4`, `M 2021 Región 4`,
-         `LB valor Región 5`, `M 2021 Región 5`,
-         `LB valor Región 6`, `M 2021 Región 6`,
-         `LB valor Región 7`, `M 2021 Región 7`,
-         `Medio de verificación`) %>%
-  arrange(`Eje Regional`)
+  select(
+    `Eje Regional`, `Política Pública`, `Vinculación con las Metas de los ODS`, `Nombre del Indicador Regional`,
+    `LB valor Región 1`, `M 2021 Región 1`,
+    `LB valor Región 2`, `M 2021 Región 2`,
+    `LB valor Región 3`, `M 2021 Región 3`,
+    `LB valor Región 4`, `M 2021 Región 4`,
+    `LB valor Región 5`, `M 2021 Región 5`,
+    `LB valor Región 6`, `M 2021 Región 6`,
+    `LB valor Región 7`, `M 2021 Región 7`,
+    `Medio de verificación`
+    ) %>%
+  arrange(
+    `Eje Regional`
+    )
 
-DT::renderDataTable({Indicadores_db},
-  extensions = c("Scroller", "Buttons"), 
-  options = list(scroller = TRUE,
-                 scrollX = TRUE,
-                 scrollY = 700,
-                 autoWidth = TRUE,
-                 pageLength = 48,
-                 dom = "Bfrtip",
-                 buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                 initComplete = JS(
-                   "function(settings, json) {","$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-                   "}"),
-                 columnDefs = list(list(width = '75px', targets = 5:18))
-    ))
+DT::renderDataTable({
+  datatable(Indicadores_db,
+  style = "bootstrap4",
+  filter = "top",
+  extensions = c(
+    "Scroller",
+    "Buttons"
+    ),
+  options = list(
+    scroller = TRUE,
+    scrollX = TRUE,
+    scrollY = 600,
+    autoWidth = TRUE,
+    pageLength = 48,
+    dom = "Bfrtip",
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+    columnDefs = list(
+      list(
+        width = '75px', 
+        targets = 5:18)
+      )
+    )
+  )
+})
 ```
